@@ -120,6 +120,9 @@ load_option:
     mov bx, config_buffer
     call load_file
 
+    cmp [config_buffer], byte 0
+    je chainload
+
     mov si, config_buffer
     mov di, filename
     mov cx, 11
@@ -148,6 +151,34 @@ load_option:
     push word [cs:config_buffer + 13]
     mov dl, [cs:config_buffer + 17]
     retf
+
+chainload:
+    mov si, chainload_msg
+    call print_string
+
+    mov bx, 0x1000
+    mov es, bx
+    xor bx, bx
+    xor ax, ax
+    mov cl, 1
+    call read_disk
+
+    mov si, ok_msg
+    call print_string
+    mov si, newline
+    call print_string
+
+    push es
+    pop ds
+    xor si, si
+    mov es, si
+    mov di, 0x7c00
+    mov cx, 512
+    rep movsb
+
+    mov dl, [cs:drive_number]
+
+    jmp 0:0x7c00
 
 load_root:
     xor ax, ax
@@ -318,6 +349,7 @@ welcome_msg:
 integrity_check_msg: db 0xA, 0xD, "Checking stage 2...    $"
 load_part_msg: db 0xA, 0xD, "Opening partition 1... $"
 no_options_msg: db 0xA, 0xD, "No boot options found! System Halted$"
+chainload_msg: db 0xA, 0xD, "Chainloading partition 1... $"
 enter_choice_msg: db 0xA, 0xD, 0xA, 0xD, "Enter boot option number to load [1-10]: $"
 invalid_option_msg: db 0xA, 0xD, "Invalid option!$"
 file_loading_msg: db 0xA, 0xD, "Loading "
