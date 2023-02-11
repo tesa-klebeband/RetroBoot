@@ -46,6 +46,8 @@ search_options:
     repe cmpsb
     pop di
     je .found_opt
+
+.next_opt:
     add di, 32
     inc bx
     cmp bx, [volume_boot_record + 0x11]
@@ -56,6 +58,9 @@ search_options:
     jmp get_choice
 
 .found_opt:
+    cmp [di], byte 0xE5
+    je .next_opt
+
     push bx
     mov bx, option_buffer
     add bx, dx
@@ -128,7 +133,7 @@ load_option:
     mov cx, 11
     rep movsb
 
-    mov si, file_loading_msg    
+    mov si, file_loading_msg
     call print_string
     call search_file
     mov bx, 0x1000
@@ -244,11 +249,11 @@ load_file:
 
     mov ax, [di + 26]           ; First cluster field
     mov [file_cluster], ax
-    
+
     mov ax, [volume_boot_record + 0xE]
     mov cl, [volume_boot_record + 0x16]
     mov bx, buffer
-    
+
     call read_disk
 
     pop es
@@ -275,7 +280,7 @@ load_file:
     mul cx
 
     add bx, ax
-    
+
     ; compute location of next cluster
     mov ax, [file_cluster]
     mov cx, 2
@@ -297,7 +302,7 @@ load_file:
 lba_to_chs:
     push ax
     push dx
-    
+
     xor dx, dx
     div word [sectors_per_track]
     inc dx
@@ -306,7 +311,7 @@ lba_to_chs:
     div word [heads]
     mov [cylinder], ax
     mov [head], dx
-    
+
     pop dx
     pop ax
 
